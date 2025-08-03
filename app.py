@@ -1,32 +1,82 @@
-"""Papsh photos uploader to the S3"""
+"""Main Flask App file"""
 
-from back.utils import (
-    is_existing_directory,
-    has_photos_files,
-    get_user_path,
-    report_upload_results
+import os
+from flask import (
+    Flask,
+    render_template,
+    redirect,
+    request,
+    url_for
 )
-from back.upload import (
-    upload_photos_to_s3
+from flask_login import (
+    LoginManager,
+    login_user,
+    logout_user,
+    login_required,
+    current_user
 )
-from back.errors import (
-    get_err_msg_valid_path,
-    get_err_msg_contains_photos
+from back_db.users import (
+    init_db,
+    get_user_by_username,
+    UserLoginWrapper
 )
 
 
-def main():
-    """Takes the path from the user & sends the photos to the S3 Cloud"""
+app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
-    path = get_user_path()
 
-    if not is_existing_directory(path):
-        err_msg_valid_path = get_err_msg_valid_path()
-        raise ValueError(err_msg_valid_path)
+login_manager = LoginManager()
+login_manager.login_view = "login"
+login_manager.init_app(app)
 
-    if not has_photos_files(path):
-        err_msg_contains_photos = get_err_msg_contains_photos()
-        raise ValueError(err_msg_contains_photos)
+init_db()
 
-    failed_uploads = upload_photos_to_s3(path)
-    report_upload_results(failed_uploads)
+
+@login_manager.user_loader
+def load_user(user_id):
+    """"
+    Download the user obj by id,
+        for the flask-login
+    """
+    return UserLoginWrapper.get(user_id)
+
+
+@app.route("/")
+@login_required
+def home():
+    """
+    The main page,
+        accessible only for the authorized users
+    """
+    return render_template("home.html", username=current_user.username)
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """
+    User login handler
+    GET: Shows login form
+    POST: Tries the authentication for the guest
+    """
+    if request.method == "POST":
+        user = get_user_by_username(request.form["username"])
+        if user and user.check_password(request.form["password"]):
+            login_user(user)
+            return redirect(
+                url_for("home", msg="Успешный вход ✨"))
+        return render_template(
+            'login.html', msg="Неверный логин или пароль 🌧")
+    return render_template("login.html")
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    """Logs out the user from the service"""
+    logout_user()
+    return redirect(url_for("login"))
+
+
+if __name__ == "__main__":
+    app.run(debug=True)

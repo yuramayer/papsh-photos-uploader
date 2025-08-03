@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Вход</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+  <div class="form-container">
+    {% if msg %}
+    <div class="notification {{ 'success' if 'успеш' in msg.lower() else 'error' }}">{{ msg }}</div>
+    {% endif %}
+    <h2>Вход</h2>
+    <form method="post">
+      <input name="username" placeholder="Имя пользователя" required>
+      <input name="password" type="password" placeholder="Пароль" required>
+      <button type="submit">Войти</button>
+    </form>
+  </div>
+</body>
+
+</html>
