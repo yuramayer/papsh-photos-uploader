@@ -25,3 +25,4 @@ def get_checked_env(env_name: str) -> str:
 CLOUD_S3_ID_KEY = get_checked_env('CLOUD_S3_ID_KEY')
 CLOUD_S3_SECRET_KEY = get_checked_env('CLOUD_S3_SECRET_KEY')
 BUCKET_NAME = get_checked_env('BUCKET_NAME')
+DB_PATH = get_checked_env('DB_PATH')
